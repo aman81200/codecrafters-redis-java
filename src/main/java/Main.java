@@ -18,8 +18,10 @@ public class Main {
           // Since the tester restarts your program quite often, setting SO_REUSEADDR
           // ensures that we don't run into 'Address already in use' errors
           serverSocket.setReuseAddress(true);
+          clientSocket = serverSocket.accept();
           // Wait for connection from client.
             ServerSocket finalServerSocket = serverSocket;
+
             Thread t1 = new Thread(
                     ()->{
                         try {
@@ -44,8 +46,6 @@ public class Main {
   }
 
   public static void returnPong(Socket clientSocket,ServerSocket serverSocket) throws IOException {
-      clientSocket = serverSocket.accept();
-
       while(true){
           byte[] input = new byte[1024];
           clientSocket.getInputStream().read(input);
