@@ -19,18 +19,17 @@ public class Main {
           // ensures that we don't run into 'Address already in use' errors
           serverSocket.setReuseAddress(true);
           // Wait for connection from client.
-          clientSocket = serverSocket.accept();
-
-          while(true){
-              byte[] input = new byte[1024];
-              clientSocket.getInputStream().read(input);
-              String inputString = new String(input).trim();
-              System.out.println("Got Input " + inputString);
-              if(!inputString.isEmpty()){
-                  clientSocket.getOutputStream().write("+PONG\r\n".getBytes());
-              }
-          }
-
+            ServerSocket finalServerSocket = serverSocket;
+            Thread t1 = new Thread(
+                    ()->{
+                        try {
+                            returnPong(clientSocket, finalServerSocket);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+            );
+            t1.start();
         } catch (IOException e) {
           System.out.println("IOException: " + e.getMessage());
         } finally {
@@ -42,5 +41,19 @@ public class Main {
             System.out.println("IOException: " + e.getMessage());
           }
         }
+  }
+
+  public static void returnPong(Socket clientSocket,ServerSocket serverSocket) throws IOException {
+      clientSocket = serverSocket.accept();
+
+      while(true){
+          byte[] input = new byte[1024];
+          clientSocket.getInputStream().read(input);
+          String inputString = new String(input).trim();
+          System.out.println("Got Input " + inputString);
+          if(!inputString.isEmpty()){
+              clientSocket.getOutputStream().write("+PONG\r\n".getBytes());
+          }
+      }
   }
 }
