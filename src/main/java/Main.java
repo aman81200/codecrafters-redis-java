@@ -37,20 +37,22 @@ public class Main {
           OutputStream outputStream = clientSocket.getOutputStream();
           InputStream in = clientSocket.getInputStream();
       ) {
-          RedisParser redisParser = new RedisParser(in);
-          List<String> array = (List<String>) redisParser.parse();
+          while (true) {
+              RedisParser redisParser = new RedisParser(in);
+              List<String> array = (List<String>) redisParser.parse();
 //          for(int i=0;i<parsedObject.size();i++){
 //              if(parsedObject.get(i) != null)
 //              {
 //                  System.out.print(parsedObject.get(i) + ", ");
 //              }
 //          }
-
-          if(array.getFirst().equals("ECHO")) {
-              outputStream.write(RedisEncoder.encodeString(array.get(1)).getBytes());
+            if(array != null) {
+                if (array.getFirst().equals("ECHO")) {
+                    outputStream.write(RedisEncoder.encodeString(array.get(1)).getBytes());
+                } else
+                    outputStream.write("+PONG\r\n".getBytes());
+            }
           }
-          else
-              outputStream.write("+PONG\r\n".getBytes());
       } catch (Exception e) {
           throw new RuntimeException(e);
       }
