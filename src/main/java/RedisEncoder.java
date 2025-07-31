@@ -1,7 +1,7 @@
 public class RedisEncoder {
 
     public static String encodeString(String inputString){
-        if(inputString == "$-1\n") return inputString;
+        if(inputString.equals("$-1\r\n")) return inputString;
         StringBuilder sb = new StringBuilder();
         sb.append('$');
         sb.append(inputString.length());
