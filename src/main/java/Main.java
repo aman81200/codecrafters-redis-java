@@ -1,7 +1,8 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
+import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -12,7 +13,7 @@ public class Main {
 
       int port = 6379;
       boolean listening = true;
-      ConcurrentHashMap<String,String> map= new ConcurrentHashMap<>();
+      ConcurrentHashMap<String,RedisValue> map= new ConcurrentHashMap<>();
 
       try (ServerSocket serverSocket = new ServerSocket(port)) {
 
@@ -35,7 +36,7 @@ public class Main {
       }
   }
 
-  public static void returnOutput(Socket clientSocket, ConcurrentHashMap<String, String> map) {
+  public static void returnOutput(Socket clientSocket, ConcurrentHashMap<String, RedisValue> map) {
       try(clientSocket;
           OutputStream outputStream = clientSocket.getOutputStream();
           InputStream in = clientSocket.getInputStream();
@@ -48,16 +49,10 @@ public class Main {
                   if (array.getFirst().equals("ECHO")) {
                     outputStream.write(RedisEncoder.encodeString(array.get(1)).getBytes());
                   }else if (array.getFirst().equals("SET")){
-                    map.put(array.get(1),array.get(2));
+                    setValueInMap(array,map);
                     outputStream.write("+OK\r\n".getBytes());
                   } else if (array.getFirst().equals("GET")){
-                      if (map.containsKey(array.get(1))) {
-                          String value = map.get(array.get(1));
-                          String encodedValue = RedisEncoder.encodeString(value);
-                          outputStream.write(encodedValue.getBytes());
-                      }else{
-                          outputStream.write("$-1\r\n".getBytes());
-                      }
+                      outputStream.write(getValueInMap(array,map).getBytes());
                   }else
                     outputStream.write("+PONG\r\n".getBytes());
               }
@@ -66,6 +61,38 @@ public class Main {
           throw new RuntimeException(e);
       }
   }
+
+  public static void setValueInMap(List<String> array, ConcurrentHashMap<String, RedisValue> map){
+      String key = array.get(1);
+      String value = array.get(2);
+      RedisValue rv = new RedisValue(value);
+      if(array.size() > 3){
+          String command = array.get(3);
+          if(command.equals("px")) {
+              Long ttl = Instant.now().toEpochMilli() + Long.parseLong(array.get(4));
+              rv.setTtl(ttl);
+          }
+      }
+      System.out.println("Value Set"+ rv);
+      map.put(key,rv);
+  }
+
+  public static String getValueInMap(List<String> array, ConcurrentHashMap<String, RedisValue> map){
+      String key = array.get(1);
+      if(map.containsKey(key)){
+          RedisValue val = map.get(key);
+          System.out.println("Value get"+ val);
+          System.out.println("Now ms" + Instant.now().toEpochMilli());
+          if(val.getTtl() == -1 || val.getTtl() > Instant.now().toEpochMilli()){
+              return val.getValue();
+          }else{
+              map.remove(key);
+          }
+      }
+      return "$-1\n";
+  }
+
+
 
   public static void readInput(InputStream in) throws IOException {
       StringBuilder sb = new StringBuilder();

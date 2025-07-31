@@ -48,7 +48,7 @@ public class RedisParser {
         for(int i=0;i<length;i++){
             Object parsedObject = parse();
             if(parsedObject != null) {
-                System.out.println("Adding object "+ parsedObject);
+               // System.out.println("Adding object "+ parsedObject);
                 array.add(parsedObject);
             }
         }
