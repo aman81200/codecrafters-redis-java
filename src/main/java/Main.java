@@ -1,7 +1,7 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.sql.ClientInfoStatus;
+import java.util.List;
 
 public class Main {
   public static void main(String[] args) {
@@ -23,7 +23,7 @@ public class Main {
               System.out.println("New Client Connected");
               new Thread(
                       () -> {
-                          returnPong(clientSocket);
+                          returnOutput(clientSocket);
                       }
               ).start();
           }
@@ -32,24 +32,49 @@ public class Main {
       }
   }
 
-  public static void returnPong(Socket clientSocket) {
+  public static void returnOutput(Socket clientSocket) {
       try(clientSocket;
           OutputStream outputStream = clientSocket.getOutputStream();
-          BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))
+          InputStream in = clientSocket.getInputStream();
       ) {
-          while (true) {
-              if(in.readLine() == null){
-                  break;
-              }
+          RedisParser redisParser = new RedisParser(in);
+          List<String> array = (List<String>) redisParser.parse();
+//          for(int i=0;i<parsedObject.size();i++){
+//              if(parsedObject.get(i) != null)
+//              {
+//                  System.out.print(parsedObject.get(i) + ", ");
+//              }
+//          }
 
-              in.readLine();
-              String line = in.readLine();
-              System.out.println("Last Line "+ line);
-              outputStream.write("+PONG\r\n".getBytes());
-              System.out.println("Wrote Pong");
+          if(array.getFirst().equals("ECHO")) {
+              outputStream.write(RedisEncoder.encodeString(array.get(1)).getBytes());
           }
+          else
+              outputStream.write("+PONG\r\n".getBytes());
       } catch (Exception e) {
           throw new RuntimeException(e);
       }
   }
+
+  public static void readInput(InputStream in) throws IOException {
+      StringBuilder sb = new StringBuilder();
+      int b;
+      while((b = in.read()) != -1){
+
+          if((char) b == '\n'){
+              sb.append("\\n");
+          }
+          else if((char) b == '\r'){
+              sb.append("\\r");
+          }else{
+              sb.append((char) b);
+          }
+      }
+
+      String ans = sb.toString();
+      System.out.println("String In input stream = " + sb.toString());
+  }
+
+
+
 }
