@@ -52,7 +52,7 @@ public class Main {
                     setValueInMap(array,map);
                     outputStream.write("+OK\r\n".getBytes());
                   } else if (array.getFirst().equals("GET")){
-                      outputStream.write(getValueInMap(array,map).getBytes());
+                      outputStream.write(RedisEncoder.encodeString(getValueInMap(array,map)).getBytes());
                   }else
                     outputStream.write("+PONG\r\n".getBytes());
               }
@@ -81,8 +81,6 @@ public class Main {
       String key = array.get(1);
       if(map.containsKey(key)){
           RedisValue val = map.get(key);
-          System.out.println("Value get"+ val);
-          System.out.println("Now ms" + Instant.now().toEpochMilli());
           if(val.getTtl() == -1 || val.getTtl() > Instant.now().toEpochMilli()){
               return val.getValue();
           }else{
