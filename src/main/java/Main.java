@@ -81,6 +81,7 @@ public class Main {
       String key = array.get(1);
       if(map.containsKey(key)){
           RedisValue val = map.get(key);
+          System.out.println("Value "+ val.getValue() + " Time Now " + Instant.now().toEpochMilli() + " TTL: " + val.getTtl());
           if(val.getTtl() == -1 || val.getTtl() > Instant.now().toEpochMilli()){
               return val.getValue();
           }else{
