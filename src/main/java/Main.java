@@ -49,7 +49,7 @@ public class Main {
                     outputStream.write(RedisEncoder.encodeString(array.get(1)).getBytes());
                   }else if (array.getFirst().equals("SET")){
                     map.put(array.get(1),array.get(2));
-                    outputStream.write("+OK".getBytes());
+                    outputStream.write("+OK\r\n".getBytes());
                   } else if (array.getFirst().equals("GET")){
                       if (map.containsKey(array.get(1))) {
                           String value = map.get(array.get(1));
