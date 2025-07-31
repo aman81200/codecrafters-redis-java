@@ -87,7 +87,7 @@ public class Main {
               map.remove(key);
           }
       }
-      return "$-1\n";
+      return "$-1\r\n";
   }
 
 
