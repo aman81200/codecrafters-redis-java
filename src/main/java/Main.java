@@ -1,7 +1,9 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Main {
   public static void main(String[] args) {
@@ -10,6 +12,7 @@ public class Main {
 
       int port = 6379;
       boolean listening = true;
+      ConcurrentHashMap<String,String> map= new ConcurrentHashMap<>();
 
       try (ServerSocket serverSocket = new ServerSocket(port)) {
 
@@ -23,7 +26,7 @@ public class Main {
               System.out.println("New Client Connected");
               new Thread(
                       () -> {
-                          returnOutput(clientSocket);
+                          returnOutput(clientSocket, map);
                       }
               ).start();
           }
@@ -32,7 +35,7 @@ public class Main {
       }
   }
 
-  public static void returnOutput(Socket clientSocket) {
+  public static void returnOutput(Socket clientSocket, ConcurrentHashMap<String, String> map) {
       try(clientSocket;
           OutputStream outputStream = clientSocket.getOutputStream();
           InputStream in = clientSocket.getInputStream();
@@ -40,18 +43,24 @@ public class Main {
           while (true) {
               RedisParser redisParser = new RedisParser(in);
               List<String> array = (List<String>) redisParser.parse();
-//          for(int i=0;i<parsedObject.size();i++){
-//              if(parsedObject.get(i) != null)
-//              {
-//                  System.out.print(parsedObject.get(i) + ", ");
-//              }
-//          }
-            if(array != null) {
-                if (array.getFirst().equals("ECHO")) {
+              if(array != null) {
+                  array.forEach(System.out::println);
+                  if (array.getFirst().equals("ECHO")) {
                     outputStream.write(RedisEncoder.encodeString(array.get(1)).getBytes());
-                } else
+                  }else if (array.getFirst().equals("SET")){
+                    map.put(array.get(1),array.get(2));
+                    outputStream.write("+OK".getBytes());
+                  } else if (array.getFirst().equals("GET")){
+                      if (map.containsKey(array.get(1))) {
+                          String value = map.get(array.get(1));
+                          String encodedValue = RedisEncoder.encodeString(value);
+                          outputStream.write(encodedValue.getBytes());
+                      }else{
+                          outputStream.write("$-1\r\n".getBytes());
+                      }
+                  }else
                     outputStream.write("+PONG\r\n".getBytes());
-            }
+              }
           }
       } catch (Exception e) {
           throw new RuntimeException(e);

@@ -104,7 +104,6 @@ public class RedisParser {
                     throw new IOException("Unexpected end of stream after \\r");
                 }
                 if (nextB == '\n') {
-
                     return sb.toString();
                 } else {
                     // Malformed protocol: \r not followed by \n
